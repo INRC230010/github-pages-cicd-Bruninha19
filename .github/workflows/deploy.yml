@@ -1,0 +1,57 @@
+name: Deploy Next.js Static Site to Pages
+
+on:
+  # Dispara o workflow em todo push para a branch 'main' (ou a sua principal)
+  push:
+    branches: ["main"]
+
+  # Permite que você execute o workflow manualmente
+  workflow_dispatch:
+
+# Define as permissões necessárias
+permissions:
+  contents: read 
+  pages: write   
+  id-token: write 
+
+jobs:
+  # 1. Job de Construção (Build)
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' 
+          cache: 'npm' # Habilita o cache para dependências
+
+      - name: Instalar Dependências
+        run: npm install
+
+      - name: Construir Site (Gera a pasta 'out' ou 'dist')
+        # O comando 'next build' com 'output: export' gera a pasta 'out'
+        run: npm run build 
+      
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Fazer Upload do Artefato
+        uses: actions/upload-pages-artifact@v4
+        with:
+          # Pasta de saída após a exportação estática do Next.js
+          path: './out' 
+
+  # 2. Job de Implantação (Deploy)
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Implantação no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
