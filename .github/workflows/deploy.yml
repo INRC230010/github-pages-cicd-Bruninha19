@@ -26,7 +26,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20' 
-          cache: 'npm' # Habilita o cache para dependências
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          # Pasta que queremos salvar no cache (dentro de 'projeto')
+          path: ./projeto/node_modules
+          # Chave única para o cache, baseada no hash do seu lock file
+          key: ${{ runner.os }}-npm-cache-${{ hashFiles('./projeto/package-lock.json') }}
+          # Chave de restauração (fallback)
+          restore-keys: |
+            ${{ runner.os }}-npm-cache-
+          
 
       - name: Instalar Dependências
         run: npm install
