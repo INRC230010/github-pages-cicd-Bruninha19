@@ -30,10 +30,12 @@ jobs:
 
       - name: Instalar Dependências
         run: npm install
+        working-directory: ./projeto
 
       - name: Construir Site (Gera a pasta 'out' ou 'dist')
         # O comando 'next build' com 'output: export' gera a pasta 'out'
         run: npm run build 
+        working-directory: ./projeto
       
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
@@ -42,7 +44,7 @@ jobs:
         uses: actions/upload-pages-artifact@v4
         with:
           # Pasta de saída após a exportação estática do Next.js
-          path: './out' 
+          path: './projeto/out' 
 
   # 2. Job de Implantação (Deploy)
   deploy:
