@@ -1,0 +1,70 @@
+name: Deploy Next.js Static Site to Pages
+
+on:
+  # Dispara o workflow em todo push para a branch 'main' (ou a sua principal)
+  push:
+    branches: ["main"]
+
+  # Permite que você execute o workflow manualmente
+  workflow_dispatch:
+
+# Define as permissões necessárias
+permissions:
+  contents: read 
+  pages: write   
+  id-token: write 
+
+jobs:
+  # 1. Job de Construção (Build)
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' 
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          # Pasta que queremos salvar no cache (dentro de 'projeto')
+          path: ./projeto/node_modules
+          # Chave única para o cache, baseada no hash do seu lock file
+          key: ${{ runner.os }}-npm-cache-${{ hashFiles('./projeto/package-lock.json') }}
+          # Chave de restauração (fallback)
+          restore-keys: |
+            ${{ runner.os }}-npm-cache-
+          
+
+      - name: Instalar Dependências
+        run: npm install
+        working-directory: ./projeto
+
+      - name: Construir Site (Gera a pasta 'out' ou 'dist')
+        # O comando 'next build' com 'output: export' gera a pasta 'out'
+        run: npm run build 
+        working-directory: ./projeto
+      
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Fazer Upload do Artefato
+        uses: actions/upload-pages-artifact@v4
+        with:
+          # Pasta de saída após a exportação estática do Next.js
+          path: './projeto/out' 
+
+  # 2. Job de Implantação (Deploy)
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Implantação no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
